@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace AndrewDemo.MemberServiceDesign
@@ -24,12 +25,12 @@ namespace AndrewDemo.MemberServiceDesign
         // event(s)
         public delegate void MemberServiceEventHandler(object sender, EventArgs e);
 
-        public event MemberServiceEventHandler OnMemberRegistered;
-        public event MemberServiceEventHandler OnMemberEmailVerified;
-        public event MemberServiceEventHandler OnMemberLocked;
-        public event MemberServiceEventHandler OnMemberArchived;
+        public event MemberServiceEventHandler OnMemberCreated;
         public event MemberServiceEventHandler OnMemberActivated;
+        public event MemberServiceEventHandler OnMemberDeactivated;
+        public event MemberServiceEventHandler OnMemberArchived;
 
+        public event MemberServiceEventHandler OnMemberRegisterCompleted;  // hook
 
 
         public bool Register()
@@ -40,7 +41,8 @@ namespace AndrewDemo.MemberServiceDesign
                 // TODO: do domain action here.
 
                 this.CompleteExecute();
-                this.OnMemberRegistered?.Invoke(this, null);
+                this.OnMemberCreated?.Invoke(this, null);
+                this.OnMemberRegisterCompleted?.Invoke(this, null);
                 return true;
             }
             catch
@@ -49,6 +51,50 @@ namespace AndrewDemo.MemberServiceDesign
                 throw;
             }
         }
+
+        public bool Import()
+        {
+            if (this.TryExecute("Import") == false) return false;
+            try
+            {
+                // TODO: do domain action here.
+
+                this.CompleteExecute();
+                this.OnMemberCreated?.Invoke(this, null);
+                return true;
+            }
+            catch
+            {
+                this.CancelExecute();
+                throw;
+            }
+        }
+
+        public bool Activate()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Lock()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Remove()
+        {
+            throw new NotImplementedException();
+        }
+
+
+
+
+
+
+
+
+
+
+
 
         public bool ValidateEmail()
         {
@@ -79,7 +125,6 @@ namespace AndrewDemo.MemberServiceDesign
         private void CheckPasswordFailOverLimit()
         {
             throw new NotImplementedException();
-
         }
 
 
@@ -89,11 +134,6 @@ namespace AndrewDemo.MemberServiceDesign
 
         }
 
-        public bool Remove()
-        {
-            throw new NotImplementedException();
-
-        }
 
 
 
@@ -106,7 +146,11 @@ namespace AndrewDemo.MemberServiceDesign
         private bool TryExecute(string actionName)
         {
             var check = this._state_machine.TryExecute(this.State, actionName);
-            if (check.result == false) return false;
+            if (check.result == false)
+            {
+                Console.WriteLine($"WARNING:: Can NOT execute action({actionName}) in current state({this.State}).");
+                return false;
+            }
             if (this._state_mutex.WaitOne(0) == false) return false;
 
             // enter mutex
@@ -136,34 +180,48 @@ namespace AndrewDemo.MemberServiceDesign
 
     public enum MemberStateEnum : int
     {
-        START = 0,
-        END = 1,
+        START = 1000,
+        END = 1001,
 
-        REGISTERED = 2,
-        VERIFIED = 3,
-        LOCKING = 4,
-        ARCHIVED = 5,
+        CREATED = 1002,
+        ACTIVATED = 1003,
+        DEACTIVATED = 1004,
+        ARCHIVED = 1005,
 
-        UNDEFINED = -1,
+        UNDEFINED = 0,
     }
 
 
     public abstract class StateMachineBase<TEnum>
     {
-        public abstract (bool result, TEnum finalState) TryExecute(TEnum currentState, string actionName);
+        protected Dictionary<(TEnum currentState, string actionName), TEnum> _state_transits = null;
+
+        public virtual (bool result, TEnum finalState) TryExecute(TEnum currentState, string actionName)
+        {
+            if (this._state_transits.TryGetValue((currentState, actionName), out var result) == false) return (false, default(TEnum));
+            return (true, result);
+        }
     }
 
-    public class MemberStateMachine //: StateMachineBase<MemberStateEnum>
+    public class MemberStateMachine : StateMachineBase<MemberStateEnum>
     {
-        
         public MemberStateMachine()
         {
+            this._state_transits = new Dictionary<(MemberStateEnum currentState, string actionName), MemberStateEnum>()
+            {
+                { (MemberStateEnum.START, "Register"), MemberStateEnum.CREATED },
+                { (MemberStateEnum.START, "Import"), MemberStateEnum.CREATED },
 
-        }
+                { (MemberStateEnum.CREATED, "Activate"), MemberStateEnum.ACTIVATED },
 
-        public (bool result, MemberStateEnum finalState) TryExecute(MemberStateEnum currentState, string actionName)
-        {
-            return (true, MemberStateEnum.UNDEFINED);
+                { (MemberStateEnum.ACTIVATED, "Lock"), MemberStateEnum.DEACTIVATED },
+                
+                { (MemberStateEnum.DEACTIVATED, "UnLock"), MemberStateEnum.ACTIVATED },
+
+                { (MemberStateEnum.ACTIVATED, "Remove"), MemberStateEnum.ARCHIVED },
+
+                { (MemberStateEnum.ARCHIVED, "Archive"), MemberStateEnum.END }// 腦補
+            };
         }
     }
 }
