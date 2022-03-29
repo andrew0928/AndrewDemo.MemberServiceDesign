@@ -17,7 +17,7 @@ namespace AndrewDemo.MemberServiceDesign
 
 
 
-
+    //[Authorize]
     public class MemberService
     {
         public MemberStateEnum State { get; private set; } = MemberStateEnum.START;
