@@ -35,39 +35,43 @@ namespace AndrewDemo.MemberServiceDesign
 
         public bool Register()
         {
-            if (this.TryExecute("Register") == false) return false;
-            try
+            var check = this._state_machine.TryExecute(this.State, "Register");
+            if (check.result == false) return false;
+
+            lock(this._state_sync_root)
             {
+                if (this.State != check.initState) return false; // lock fail.
+
                 // TODO: do domain action here.
 
-                this.CompleteExecute();
-                this.OnMemberCreated?.Invoke(this, null);
-                this.OnMemberRegisterCompleted?.Invoke(this, null);
-                return true;
+                this.State = check.finalState;
             }
-            catch
-            {
-                this.CancelExecute();
-                throw;
-            }
+
+            // fire events
+            this.OnMemberCreated?.Invoke(this, null);
+            this.OnMemberRegisterCompleted?.Invoke(this, null);
+
+            return true;
         }
 
         public bool Import()
         {
-            if (this.TryExecute("Import") == false) return false;
-            try
+            var check = this._state_machine.TryExecute(this.State, "Import");
+            if (check.result == false) return false;
+
+            lock (this._state_sync_root)
             {
+                if (this.State != check.initState) return false; // lock fail.
+
                 // TODO: do domain action here.
 
-                this.CompleteExecute();
-                this.OnMemberCreated?.Invoke(this, null);
-                return true;
+                this.State = check.finalState;
             }
-            catch
-            {
-                this.CancelExecute();
-                throw;
-            }
+
+            // fire events
+            this.OnMemberCreated?.Invoke(this, null);
+
+            return true;
         }
 
         public bool Activate()
@@ -98,7 +102,12 @@ namespace AndrewDemo.MemberServiceDesign
 
         public bool ValidateEmail()
         {
-            throw new NotImplementedException();
+            var check = this._state_machine.TryExecute(this.State, "Register");
+            if (check.result == false) return false;
+
+            // TODO: do domain actions here
+
+            return true;
         }
 
         private int _check_password_fail_count = 0;
@@ -136,46 +145,46 @@ namespace AndrewDemo.MemberServiceDesign
 
 
 
+        private object _state_sync_root = new object();
 
-
-        private Mutex _state_mutex = new Mutex();
-        private MemberStateEnum _state_from = MemberStateEnum.UNDEFINED;
-        private MemberStateEnum _state_to = MemberStateEnum.UNDEFINED;
+        //private Mutex _state_mutex = new Mutex();
+        //private MemberStateEnum _state_from = MemberStateEnum.UNDEFINED;
+        //private MemberStateEnum _state_to = MemberStateEnum.UNDEFINED;
         private MemberStateMachine _state_machine = new MemberStateMachine();
 
-        private bool TryExecute(string actionName)
-        {
-            var check = this._state_machine.TryExecute(this.State, actionName);
-            if (check.result == false)
-            {
-                Console.WriteLine($"WARNING:: Can NOT execute action({actionName}) in current state({this.State}).");
-                return false;
-            }
-            if (this._state_mutex.WaitOne(0) == false) return false;
+        //private bool TryExecute(string actionName)
+        //{
+        //    var check = this._state_machine.TryExecute(this.State, actionName);
+        //    if (check.result == false)
+        //    {
+        //        Console.WriteLine($"WARNING:: Can NOT execute action({actionName}) in current state({this.State}).");
+        //        return false;
+        //    }
+        //    if (this._state_mutex.WaitOne(0) == false) return false;
 
-            // enter mutex
-            this._state_from = this.State;
-            this._state_to = check.finalState;
-            return true;
-        }
+        //    // enter mutex
+        //    this._state_from = this.State;
+        //    this._state_to = check.finalState;
+        //    return true;
+        //}
 
-        private bool CompleteExecute()
-        {
-            if (this.State != this._state_from) return false;   // optimistic lock
+        //private bool CompleteExecute()
+        //{
+        //    if (this.State != this._state_from) return false;   // optimistic lock
 
-            this.State = this._state_to;
+        //    this.State = this._state_to;
 
-            this._state_from = this._state_to = MemberStateEnum.UNDEFINED;
-            this._state_mutex.ReleaseMutex();
-            return true;
-        }
+        //    this._state_from = this._state_to = MemberStateEnum.UNDEFINED;
+        //    this._state_mutex.ReleaseMutex();
+        //    return true;
+        //}
 
-        private bool CancelExecute()
-        {
-            this._state_from = this._state_to = MemberStateEnum.UNDEFINED;
-            this._state_mutex.ReleaseMutex();
-            return true;
-        }
+        //private bool CancelExecute()
+        //{
+        //    this._state_from = this._state_to = MemberStateEnum.UNDEFINED;
+        //    this._state_mutex.ReleaseMutex();
+        //    return true;
+        //}
     }
 
     public enum MemberStateEnum : int
@@ -196,10 +205,14 @@ namespace AndrewDemo.MemberServiceDesign
     {
         protected Dictionary<(TEnum currentState, string actionName), TEnum> _state_transits = null;
 
-        public virtual (bool result, TEnum finalState) TryExecute(TEnum currentState, string actionName)
+        public virtual (bool result, TEnum initState, TEnum finalState) TryExecute(TEnum currentState, string actionName)
         {
-            if (this._state_transits.TryGetValue((currentState, actionName), out var result) == false) return (false, default(TEnum));
-            return (true, result);
+            if (this._state_transits.TryGetValue((currentState, actionName), out var result) == false)
+            {
+                Console.WriteLine($"WARNING: Can not change state from [{currentState}] with [{actionName}()] command.");
+                return (false, currentState, default(TEnum));
+            }
+            return (true, currentState, result);
         }
     }
 
