@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +37,7 @@ namespace WebAPI
             }
 
             app.UseRouting();
+            app.UseMiddleware<JwtMiddleware>();
 
             app.UseAuthorization();
 
@@ -43,6 +45,23 @@ namespace WebAPI
             {
                 endpoints.MapControllers();
             });
+
+        }
+    }
+
+    public class JwtMiddleware
+    {
+        private readonly RequestDelegate _next;
+        public JwtMiddleware(RequestDelegate next)
+        {
+            _next = next;
+        }
+        public async Task Invoke(HttpContext context)
+        {
+
+            Console.WriteLine("5123");
+
+            await _next(context);
         }
     }
 }
