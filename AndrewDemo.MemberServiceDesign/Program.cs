@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Principal;
 using System.Threading;
 
 namespace AndrewDemo.MemberServiceDesign
@@ -8,10 +9,16 @@ namespace AndrewDemo.MemberServiceDesign
     {
         static void Main(string[] args)
         {
+            Thread.CurrentPrincipal = new GenericPrincipal(
+                new GenericIdentity("andrew", "demo"),
+                new string[] { "USER" });
+
             var ms = new MemberService();
 
-            ms.Register();
-            ms.Register();
+            Console.WriteLine($"* Call Register(): {ms.Register()}");
+            Console.WriteLine($"* Call Activate(): {ms.Activate()}");
+            Console.WriteLine($"* Call Lock(): {ms.Lock()}");
+            Console.WriteLine($"* Call Remove(): {ms.Remove()}");
         }
     }
 
@@ -35,6 +42,7 @@ namespace AndrewDemo.MemberServiceDesign
 
         public bool Register()
         {
+            if (!Thread.CurrentPrincipal.IsInRole("USER")) return false;
             var check = this._state_machine.TryExecute(this.State, "Register");
             if (check.result == false) return false;
 
@@ -56,6 +64,7 @@ namespace AndrewDemo.MemberServiceDesign
 
         public bool Import()
         {
+            if (!Thread.CurrentPrincipal.IsInRole("USER")) return false;
             var check = this._state_machine.TryExecute(this.State, "Import");
             if (check.result == false) return false;
 
@@ -76,17 +85,65 @@ namespace AndrewDemo.MemberServiceDesign
 
         public bool Activate()
         {
-            throw new NotImplementedException();
+            if (!(Thread.CurrentPrincipal.IsInRole("USER") || Thread.CurrentPrincipal.IsInRole("STAFF"))) return false;
+            var check = this._state_machine.TryExecute(this.State, "Activate");
+            if (check.result == false) return false;
+
+            lock (this._state_sync_root)
+            {
+                if (this.State != check.initState) return false; // lock fail.
+
+                // TODO: do domain action here.
+
+                this.State = check.finalState;
+            }
+
+            // fire events
+            this.OnMemberActivated?.Invoke(this, null);
+
+            return true;
         }
 
         public bool Lock()
         {
-            throw new NotImplementedException();
+            if (!Thread.CurrentPrincipal.IsInRole("USER")) return false;
+            var check = this._state_machine.TryExecute(this.State, "Lock");
+            if (check.result == false) return false;
+
+            lock (this._state_sync_root)
+            {
+                if (this.State != check.initState) return false; // lock fail.
+
+                // TODO: do domain action here.
+
+                this.State = check.finalState;
+            }
+
+            // fire events
+            this.OnMemberDeactivated?.Invoke(this, null);
+
+            return true;
         }
 
         public bool Remove()
         {
-            throw new NotImplementedException();
+            if (!(Thread.CurrentPrincipal.IsInRole("USER") || Thread.CurrentPrincipal.IsInRole("STAFF"))) return false;
+            var check = this._state_machine.TryExecute(this.State, "Remove");
+            if (check.result == false) return false;
+
+            lock (this._state_sync_root)
+            {
+                if (this.State != check.initState) return false; // lock fail.
+
+                // TODO: do domain action here.
+
+                this.State = check.finalState;
+            }
+
+            // fire events
+            this.OnMemberArchived?.Invoke(this, null);
+
+            return true;
         }
 
 
@@ -209,7 +266,7 @@ namespace AndrewDemo.MemberServiceDesign
         {
             if (this._state_transits.TryGetValue((currentState, actionName), out var result) == false)
             {
-                Console.WriteLine($"WARNING: Can not change state from [{currentState}] with [{actionName}()] command.");
+                //Console.WriteLine($"WARNING: Can not change state from [{currentState}] with [{actionName}()] command.");
                 return (false, currentState, default(TEnum));
             }
             return (true, currentState, result);
