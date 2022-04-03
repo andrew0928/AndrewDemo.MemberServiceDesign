@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="jose-jwt" Version="3.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AndrewDemo.Member.Contracts\AndrewDemo.Member.Contracts.csproj" />
+    <ProjectReference Include="..\AndrewDemo.Member.Core\AndrewDemo.Member.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="init-database.jsonl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
