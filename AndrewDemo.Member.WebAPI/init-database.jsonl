@@ -1,4 +1,4 @@
-﻿{"Id":1,"Name":"andrew","Email":"andrew@ch.net","PasswordHash":"4a7d1ed414474e4033ac29ccb8653d9b","State":3}
-{"Id":2,"Name":"nancy","Email":"nancy@123.com","PasswordHash":"4a7d1ed414474e4033ac29ccb8653d9b","State":3}
-{"Id":3,"Name":"peter","Email":"peter@456.org","PasswordHash":"4a7d1ed414474e4033ac29ccb8653d9b","State":3}
-{"Id":4,"Name":"annie","Email":"annie@789.tw","PasswordHash":"4a7d1ed414474e4033ac29ccb8653d9b","State":3}
+﻿{"Id":1,"Name":"andrew","Email":"andrew@123.net","PasswordHash":"sgnevoy5D+/57YtwFyE3gA==","State":3,"FailedLoginAttemptsCount":0,"ValidateNumber":null}
+{"Id":2,"Name":"nancy","Email":"nancy@456.com","PasswordHash":"sgnevoy5D+/57YtwFyE3gA==","State":3,"FailedLoginAttemptsCount":0,"ValidateNumber":null}
+{"Id":3,"Name":"peter","Email":"peter@789.idv.tw","PasswordHash":"sgnevoy5D+/57YtwFyE3gA==","State":2,"FailedLoginAttemptsCount":0,"ValidateNumber":"26076378"}
+{"Id":4,"Name":"annie","Email":"annie@012.org","PasswordHash":"sgnevoy5D+/57YtwFyE3gA==","State":2,"FailedLoginAttemptsCount":0,"ValidateNumber":"42850300"}

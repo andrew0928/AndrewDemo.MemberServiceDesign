@@ -21,14 +21,8 @@ namespace AndrewDemo.Member.Core
 
         internal int _seed = 0;
         internal Dictionary<int, MemberModel> _members = new Dictionary<int, MemberModel>();
-        //internal Dictionary<int, int> _members_password_error_counts = new Dictionary<int, int>();
-        //internal Dictionary<int, (string number, DateTime expireTime)> _members_pending_validations = new Dictionary<int, (string number, DateTime expireTime)>();
         internal Dictionary<int, object> _members_syncroot = new Dictionary<int, object>();
 
-        internal int GetNewID()
-        {
-            return Interlocked.Increment(ref this._seed);
-        }
 
         public bool Import(string file)
         {
@@ -46,18 +40,32 @@ namespace AndrewDemo.Member.Core
             this._seed = Math.Max(this._seed, maxid);
             return true;
         }
+
         public bool Export(string file)
         {
             if (file == null) return false;
-            if (File.Exists(file) == true) return false;
+
+            if (File.Exists(file) == true) File.Delete(file);
             File.AppendAllLines(file, this.ExportLines());
             return true;
         }
+
+        internal int GetNewID()
+        {
+            return Interlocked.Increment(ref this._seed);
+        }
+
         private IEnumerable<string> ExportLines()
         {
-            foreach(var member in this._members.Values)
+            var opts = new JsonSerializerOptions()
             {
-                yield return JsonSerializer.Serialize<MemberModel>(member);
+                //WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+
+            foreach (var member in this._members.Values)
+            {
+                yield return JsonSerializer.Serialize<MemberModel>(member, opts);
             }
             yield break;
         }

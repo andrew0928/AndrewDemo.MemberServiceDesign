@@ -20,11 +20,15 @@ namespace AndrewDemo.Member.Contracts
 
 
 
+        public int FailedLoginAttemptsCount { get; set; }
 
-        public int LoginAttemptCount { get; set; }
+        public string ValidateNumber { get; set; }
 
-        public string ValidateNumberAndExpire { get; set; }
 
+        public MemberModel Clone()
+        {
+            return this.MemberwiseClone() as MemberModel;
+        }
     }
 
 }

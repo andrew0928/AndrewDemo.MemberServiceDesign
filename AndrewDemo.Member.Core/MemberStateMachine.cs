@@ -16,6 +16,7 @@ namespace AndrewDemo.Member.Core
 
         public MemberStateMachine()
         {
+            this._fsmext.Add(("register", MemberState.START, MemberState.CREATED, new string[] { "USER" }));
             this._fsmext.Add(("activate", MemberState.CREATED, MemberState.ACTIVATED, new string[] { "USER" }));
             this._fsmext.Add(("lock", MemberState.ACTIVATED, MemberState.DEACTIVED, new string[] { "USER", "STAFF" }));
             this._fsmext.Add(("unlock", MemberState.DEACTIVED, MemberState.ACTIVATED, new string[] { "USER", "STAFF" }));
@@ -35,7 +36,6 @@ namespace AndrewDemo.Member.Core
             this._fsmext.Add(("force-reset-password", MemberState.ACTIVATED, null, new string[] { "STAFF" }));
             this._fsmext.Add(("force-reset-password", MemberState.DEACTIVED, null, new string[] { "STAFF" }));
                             
-            this._fsmext.Add(("register", null, null, new string[] { "USER" }));
             this._fsmext.Add(("import", null, null, new string[] { "STAFF" }));
             this._fsmext.Add(("get-members", null, null, new string[] { "STAFF" }));
             this._fsmext.Add(("check-password", null, null, new string[] { "USER" }));
@@ -43,23 +43,28 @@ namespace AndrewDemo.Member.Core
         }
 
 
+        // only for major API, major API without state change
         public virtual (bool result, MemberState? initState, MemberState? finalState) CanExecute(MemberState currentState, string actionName, string identityType)
         {
-            foreach(var x in (from r in this._fsmext where r.actionName == actionName && (r.initState == null || r.initState == currentState) && r.allowIdentityTypes.Contains(identityType) select r))
+            foreach(var x in (from r in this._fsmext where r.actionName == actionName && r.initState == currentState && r.allowIdentityTypes.Contains(identityType) select r))
             {
                 return (true, currentState, x.finalState);
             }
 
+            Console.WriteLine($"* FSM: can not execute action({actionName}) in current member state({currentState}) with token identity type({identityType}) and specified init state({currentState})");
             return (false, null, null);
         }
 
+
+        // only for non specified member API
         public virtual bool CanExecute(string actionName, string identityType)
         {
-            foreach (var x in (from r in this._fsmext where r.actionName == actionName && r.initState == null && r.finalState == null && r.allowIdentityTypes.Contains(identityType) select r))
+            foreach (var x in (from r in this._fsmext where r.actionName == actionName && r.allowIdentityTypes.Contains(identityType) select r))
             {
                 return (true);
             }
 
+            Console.WriteLine($"* FSM: can not execute action({actionName}) in current token identity type({identityType})");
             return false;
         }
     }
