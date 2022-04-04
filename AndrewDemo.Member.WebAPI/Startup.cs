@@ -44,7 +44,7 @@ namespace WebAPI
             }
 
             app.UseRouting();
-            app.UseMiddleware<JwtMiddleware>();
+            app.UseMiddleware<MemberServiceMiddleware>();
 
             app.UseAuthorization();
 
@@ -56,12 +56,12 @@ namespace WebAPI
         }
     }
 
-    public class JwtMiddleware
+    public class MemberServiceMiddleware
     {
         private readonly RequestDelegate _next;
         private const string _bearerText = "Bearer ";
         
-        public JwtMiddleware(RequestDelegate next)
+        public MemberServiceMiddleware(RequestDelegate next)
         {
             _next = next;
         }
@@ -84,12 +84,14 @@ namespace WebAPI
                 id = int.Parse(context.Request.RouteValues["id"] as string);
             }
 
-
             string actionName = null;
             var ep = context.GetEndpoint();
             if (ep != null)
             {
-                MemberServiceActionAttribute action = (from x in ep.Metadata where x is MemberServiceActionAttribute select x as MemberServiceActionAttribute).FirstOrDefault();
+                MemberServiceActionAttribute action = (
+                    from x in ep.Metadata 
+                    where x is MemberServiceActionAttribute 
+                    select x as MemberServiceActionAttribute).FirstOrDefault();
                 Console.WriteLine($"Action: {action.ActionName}");
                 actionName = action.ActionName;
             }

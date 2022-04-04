@@ -27,18 +27,18 @@ namespace AndrewDemo.Member.Core
             this._fsmext.Add(("generate-validate-number", MemberState.CREATED, null, new string[] { "USER", "STAFF" }));
             this._fsmext.Add(("generate-validate-number", MemberState.START, null, new string[] { "USER", "STAFF" }));
             this._fsmext.Add(("generate-validate-number", MemberState.DEACTIVED, null, new string[] { "STAFF" }));
-            this._fsmext.Add(("confirm-validate-number", MemberState.CREATED, null, new string[] { "USER" }));
-            this._fsmext.Add(("confirm-validate-number", MemberState.ACTIVATED, null, new string[] { "USER" }));
-            this._fsmext.Add(("confirm-validate-number", MemberState.DEACTIVED, null, new string[] { "USER" }));
+            //this._fsmext.Add(("confirm-validate-number", MemberState.CREATED, null, new string[] { "USER" }));
+            //this._fsmext.Add(("confirm-validate-number", MemberState.ACTIVATED, null, new string[] { "USER" }));
+            //this._fsmext.Add(("confirm-validate-number", MemberState.DEACTIVED, null, new string[] { "USER" }));
             this._fsmext.Add(("reset-password-with-old-password", MemberState.ACTIVATED, null, new string[] { "USER" }));
-            this._fsmext.Add(("reset-password-with-validate-number", MemberState.ARCHIVED, null, new string[] { "USER" }));
-            this._fsmext.Add(("reset-password-with-validate-number", MemberState.DEACTIVED, null, new string[] { "USER" }));
+            this._fsmext.Add(("reset-password-with-validate-number", MemberState.ACTIVATED, MemberState.ACTIVATED, new string[] { "USER" }));
+            this._fsmext.Add(("reset-password-with-validate-number", MemberState.DEACTIVED, MemberState.ACTIVATED, new string[] { "USER" }));
             this._fsmext.Add(("force-reset-password", MemberState.ACTIVATED, null, new string[] { "STAFF" }));
             this._fsmext.Add(("force-reset-password", MemberState.DEACTIVED, null, new string[] { "STAFF" }));
-                            
+            this._fsmext.Add(("check-password", MemberState.ACTIVATED, null, new string[] { "USER" }));
+
             this._fsmext.Add(("import", null, null, new string[] { "STAFF" }));
             this._fsmext.Add(("get-members", null, null, new string[] { "STAFF" }));
-            this._fsmext.Add(("check-password", null, null, new string[] { "USER" }));
             this._fsmext.Add(("get-member", null, null, new string[] { "USER", "STAFF" }));
         }
 
@@ -46,7 +46,7 @@ namespace AndrewDemo.Member.Core
         // only for major API, major API without state change
         public virtual (bool result, MemberState? initState, MemberState? finalState) CanExecute(MemberState currentState, string actionName, string identityType)
         {
-            foreach(var x in (from r in this._fsmext where r.actionName == actionName && r.initState == currentState && r.allowIdentityTypes.Contains(identityType) select r))
+            foreach(var x in (from r in this._fsmext where r.actionName == actionName && (r.initState == null || r.initState == currentState) && r.allowIdentityTypes.Contains(identityType) select r))
             {
                 return (true, currentState, x.finalState);
             }

@@ -14,6 +14,9 @@ namespace AndrewDemo.Member.Core
         private MemberStateMachine _fsm;
         private MemberRepo _repo;
 
+        public event EventHandler<MemberServiceEventArgs> OnStateChanged;
+        //public event EventHandler<MemberServiceEventArgs> OnActionExecCompleted;
+
         /// <summary>
         /// 
         /// </summary>
@@ -25,6 +28,14 @@ namespace AndrewDemo.Member.Core
             this._token = token;
             this._fsm = fsm;
             this._repo = repo;
+
+            // for degug only
+            this.OnStateChanged += MemberService_OnStateChanged;
+        }
+
+        private void MemberService_OnStateChanged(object sender, MemberServiceEventArgs e)
+        {
+            Console.WriteLine($"* OnStateChanged Event: Member({e.AssoicatedMember.Id}) state({e.InitState} => {e.FinalState}) via action({e.ActionName}).");
         }
 
 
@@ -37,6 +48,8 @@ namespace AndrewDemo.Member.Core
         {
             if (this._repo._members.ContainsKey(id) == false) return false;
 
+            MemberState initState;
+            MemberState finalState;
             lock (this._repo._members_syncroot[id])
             {
                 var check = this._fsm.CanExecute(
@@ -46,6 +59,7 @@ namespace AndrewDemo.Member.Core
                 if (check.result == false) return false;
 
                 var model = this._repo._members[id].Clone();
+                initState = model.State;
 
                 if (func(model) == false)
                 {
@@ -60,9 +74,19 @@ namespace AndrewDemo.Member.Core
                 }
 
                 this._repo._members[id] = model.Clone();
+                finalState = model.State;
             }
 
             // fire state change event
+            this.OnStateChanged?.Invoke(this, new MemberServiceEventArgs()
+            {
+                EventType = "StateChange",
+                ActionName = actionName,
+                InitState = initState,
+                FinalState = finalState,
+                AssoicatedMember = this._repo._members[id].Clone()
+            });
+
             return true;
         }
 
@@ -134,7 +158,8 @@ namespace AndrewDemo.Member.Core
         #region domain / aggraton API(s), 會因為狀態決定能否執行，不會直接改變狀態 (除非內部呼叫了 major APIs)
         public string GenerateValidateNumber(int id)
         {
-            FSMRuleCheck(id, "generate-validate-number");
+            if (FSMRuleCheck(id, "generate-validate-number") == false) return null;
+
             Random rnd = new Random();
             string number = rnd.Next(10000000, 99999999).ToString();
 
@@ -166,7 +191,7 @@ namespace AndrewDemo.Member.Core
             //var x = (from m in this._repo._members.Values where m.Name == name select m).FirstOrDefault();
             //if (x == null) return false;
 
-            FSMRuleCheck(id, "check-password");
+            if (FSMRuleCheck(id, "check-password") == false) return false;
 
             bool shouldLockOut = true;
             bool check_result = true;
@@ -182,6 +207,7 @@ namespace AndrewDemo.Member.Core
                 else
                 {
                     check_result = true;
+                    shouldLockOut = false;
                     m.FailedLoginAttemptsCount = 0;
                 }
             }
@@ -192,7 +218,8 @@ namespace AndrewDemo.Member.Core
 
         public bool ResetPasswordWithCheckOldPassword(int id, string newPassword, string oldPassword)
         {
-            FSMRuleCheck(id, "reset-password-with-old-password");
+            if (FSMRuleCheck(id, "reset-password-with-old-password") == false) return false;
+
             lock (this._repo._members_syncroot[id])
             {
                 var m = this._repo._members[id];
@@ -206,21 +233,37 @@ namespace AndrewDemo.Member.Core
         }
         public bool ResetPasswordWithValidateNumber(int id, string newPassword, string validateNumber)
         {
-            FSMRuleCheck(id, "reset-password-with-validate-number");
-            lock (this._repo._members_syncroot[id])
+            //if (FSMRuleCheck(id, "reset-password-with-validate-number")== false) return false;
+
+            //lock (this._repo._members_syncroot[id])
+            //{
+            //    var m = this._repo._members[id];
+            //    if (string.IsNullOrEmpty(m.ValidateNumber) || m.ValidateNumber != validateNumber) return false;
+
+            //    m.PasswordHash = Convert.ToBase64String(this.ComputePasswordHash(newPassword));
+            //    m.FailedLoginAttemptsCount = 0;
+            //    m.ValidateNumber = null;
+            //}
+
+            bool result = this.SafeChangeState(id, "reset-password-with-validate-number", m =>
             {
-                var m = this._repo._members[id];
                 if (string.IsNullOrEmpty(m.ValidateNumber) || m.ValidateNumber != validateNumber) return false;
 
                 m.PasswordHash = Convert.ToBase64String(this.ComputePasswordHash(newPassword));
                 m.FailedLoginAttemptsCount = 0;
                 m.ValidateNumber = null;
-            }
+                m.State = MemberState.ACTIVATED;
+
+                return true;
+            });
+            if (result == false) return false;
+
             return true;
         }
         public bool ForceResetPassword(int id, string newPassword)
         {
-            FSMRuleCheck(id, "force-reset-password");
+            if (FSMRuleCheck(id, "force-reset-password") == false) return false;
+
             lock (this._repo._members_syncroot[id])
             {
                 var m = this._repo._members[id];
@@ -237,7 +280,7 @@ namespace AndrewDemo.Member.Core
 
         public MemberModel Register(string name, string password, string email)
         {
-            FSMRuleCheck(null, "register");
+            if (FSMRuleCheck(null, "register") == false) return null;
 
             object syncroot = new object();
             MemberModel member = new MemberModel()
@@ -275,7 +318,7 @@ namespace AndrewDemo.Member.Core
 
         public MemberModel Import(MemberModel member)
         {
-            FSMRuleCheck(null, "import");
+            if (FSMRuleCheck(null, "import")==false) return null;
 
             //if (this._repo._members.ContainsKey(member.Id)) throw new InvalidOperationException("Member exists.");
 
@@ -295,7 +338,8 @@ namespace AndrewDemo.Member.Core
 
         public MemberModel GetMember(int id)
         {
-            FSMRuleCheck(id, "get-member");            
+            if (FSMRuleCheck(id, "get-member") == false) return null;
+
             return (this._repo._members[id].Clone());
         }
 
@@ -313,7 +357,8 @@ namespace AndrewDemo.Member.Core
 
         public IQueryable<MemberModel> GetMembers()
         {
-            FSMRuleCheck(null, "get-members");
+            if (FSMRuleCheck(null, "get-members") == false) return null;
+
             //Required_IdentityType("STAFF");
 
             return this._repo._members.Values.Select((m) => { return m.Clone(); }).AsQueryable();
@@ -338,23 +383,35 @@ namespace AndrewDemo.Member.Core
         //    throw new InvalidOperationException($"Member not exist or its current STATE is not {state}.");
         //}
 
-        private void FSMRuleCheck(int? id, string actionName)
+        private bool FSMRuleCheck(int? id, string actionName)
         {
-            if (id != null && this._repo._members.ContainsKey(id.Value) == false) throw new InvalidOperationException($"Member(id: {id}) not exist.");
+            if (id != null && this._repo._members.ContainsKey(id.Value) == false)
+            {
+                Console.WriteLine($"* FSM: Member(id: {id}) not exist.");
+                return false;
+            }
 
             if (id != null)
             {
                 if (this._fsm.CanExecute(
                     this._repo._members[id.Value].State,
                     actionName,
-                    this._token.IdentityType).result == false) throw new InvalidOperationException($"FSM rule check fail.");
+                    this._token.IdentityType).result == false)
+                {
+                    Console.WriteLine($"* FSM: FSM rule check fail.");
+                    return false;
+                }
             }
             else
             {
-                if (this._fsm.CanExecute(actionName, this._token.IdentityType) == false) throw new InvalidOperationException($"");
+                if (this._fsm.CanExecute(actionName, this._token.IdentityType) == false)
+                {
+                    Console.WriteLine($"* FSM: FSM rule check fail.");
+                    return false;
+                }
             }
 
-            return;
+            return true;
         }
 
         private byte[] ComputePasswordHash(string password)
