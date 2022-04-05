@@ -3,17 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AndrewDemo.MemberServiceDesign", "AndrewDemo.MemberServiceDesign\AndrewDemo.MemberServiceDesign.csproj", "{6F6A3AD4-EC95-4901-8EDB-DC0DEC13F172}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AndrewDemo.Member.Contracts", "AndrewDemo.Member.Contracts\AndrewDemo.Member.Contracts.csproj", "{5E0E6CC8-C9B3-4A76-A94B-F0F1D22663C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndrewDemo.Member.Contracts", "AndrewDemo.Member.Contracts\AndrewDemo.Member.Contracts.csproj", "{5E0E6CC8-C9B3-4A76-A94B-F0F1D22663C4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndrewDemo.Member.Core", "AndrewDemo.Member.Core\AndrewDemo.Member.Core.csproj", "{A9ECA080-C9D4-493D-91A3-A60CDC26CC05}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AndrewDemo.Member.Core", "AndrewDemo.Member.Core\AndrewDemo.Member.Core.csproj", "{A9ECA080-C9D4-493D-91A3-A60CDC26CC05}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AndrewDemo.Member.WebAPI", "AndrewDemo.Member.WebAPI\AndrewDemo.Member.WebAPI.csproj", "{6A2C6C25-15BA-4510-B73F-58F884CABB60}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndrewDemo.Member.CLITools", "AndrewDemo.Member.CLITools\AndrewDemo.Member.CLITools.csproj", "{F396949A-8508-40BE-A09D-7EFE64A5C411}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AndrewDemo.Member.CLITools", "AndrewDemo.Member.CLITools\AndrewDemo.Member.CLITools.csproj", "{F396949A-8508-40BE-A09D-7EFE64A5C411}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AndrewDemo.Member.Core.Tests", "AndrewDemo.Member.Core.Tests\AndrewDemo.Member.Core.Tests.csproj", "{9AE3965A-0F51-42C7-B2FA-6B6490E3FB3B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AndrewDemo.Member.Core.Tests", "AndrewDemo.Member.Core.Tests\AndrewDemo.Member.Core.Tests.csproj", "{9AE3965A-0F51-42C7-B2FA-6B6490E3FB3B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A9ECA080-C9D4-493D-91A3-A60CDC26CC05} = {A9ECA080-C9D4-493D-91A3-A60CDC26CC05}
 		{5E0E6CC8-C9B3-4A76-A94B-F0F1D22663C4} = {5E0E6CC8-C9B3-4A76-A94B-F0F1D22663C4}
@@ -25,10 +23,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6F6A3AD4-EC95-4901-8EDB-DC0DEC13F172}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6F6A3AD4-EC95-4901-8EDB-DC0DEC13F172}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6F6A3AD4-EC95-4901-8EDB-DC0DEC13F172}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6F6A3AD4-EC95-4901-8EDB-DC0DEC13F172}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5E0E6CC8-C9B3-4A76-A94B-F0F1D22663C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5E0E6CC8-C9B3-4A76-A94B-F0F1D22663C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E0E6CC8-C9B3-4A76-A94B-F0F1D22663C4}.Release|Any CPU.ActiveCfg = Release|Any CPU

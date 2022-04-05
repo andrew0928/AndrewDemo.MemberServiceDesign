@@ -33,13 +33,6 @@ namespace WebAPI.Controllers
             return this._service.Register(name, password, email);
         }
 
-        //[HttpPost]
-        //[Route("import")]
-        //[MemberServiceAction(ActionName = "import")]
-        //public object Import()
-        //{
-        //    this._service.Import()
-        //}
 
         [HttpPost]
         [Route("{id:int:min(1)}/activate")]

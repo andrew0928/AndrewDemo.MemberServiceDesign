@@ -8,10 +8,6 @@ namespace AndrewDemo.Member.Core
 {
     public class MemberStateMachine
     {
-        // state transit:
-
-        // action metadata ( allow role, allow init state, [final state], fire event )
-        //private Dictionary<string, (MemberState? initState, MemberState? finalState, string[] allowIdentityTypes)> _fsmext = new Dictionary<string, (MemberState initState, MemberState finalState, string[] allowIdentityTypes)>();
         private List<(string actionName, MemberState? initState, MemberState? finalState, string[] allowIdentityTypes)> _fsmext = new List<(string actionName, MemberState? initState, MemberState? finalState, string[] allowIdentityTypes)>();
 
         public MemberStateMachine()

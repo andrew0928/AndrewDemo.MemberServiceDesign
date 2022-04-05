@@ -10,9 +10,9 @@ namespace AndrewDemo.Member.Core
 {
     public class MemberService
     {
-        private MemberServiceToken _token;
-        private MemberStateMachine _fsm;
-        private MemberRepo _repo;
+        private readonly MemberServiceToken _token;
+        private readonly MemberStateMachine _fsm;
+        private readonly MemberRepo _repo;
 
         public event EventHandler<MemberServiceEventArgs> OnStateChanged;
         //public event EventHandler<MemberServiceEventArgs> OnActionExecCompleted;
@@ -78,17 +78,21 @@ namespace AndrewDemo.Member.Core
             }
 
             // fire state change event
-            this.OnStateChanged?.Invoke(this, new MemberServiceEventArgs()
+            if (initState != finalState)
             {
-                EventType = "StateChange",
-                ActionName = actionName,
-                InitState = initState,
-                FinalState = finalState,
-                AssoicatedMember = this._repo._members[id].Clone()
-            });
+                this.OnStateChanged?.Invoke(this, new MemberServiceEventArgs()
+                {
+                    EventType = "StateChange",
+                    ActionName = actionName,
+                    InitState = initState,
+                    FinalState = finalState,
+                    AssoicatedMember = this._repo._members[id].Clone()
+                });
+            }
 
             return true;
         }
+
 
         public bool Activate(int id, string validateNumber)
         {
@@ -172,47 +176,24 @@ namespace AndrewDemo.Member.Core
             return number;
         }
 
-        //public bool ConfirmValidateNumber(int id, string validateNumber)
-        //{
-        //    FSMRuleCheck(id, "confirm-validate-number");
-
-        //    lock (this._repo._members_syncroot[id])
-        //    {
-        //        var m = this._repo._members[id];
-        //        if (validateNumber != m.ValidateNumber) return false;
-        //    }
-
-        //    this.Activate(id, "pass validate");
-        //    return true;
-        //}
 
         public bool CheckPassword(int id, string password)
         {
-            //var x = (from m in this._repo._members.Values where m.Name == name select m).FirstOrDefault();
-            //if (x == null) return false;
-
             if (FSMRuleCheck(id, "check-password") == false) return false;
 
-            bool shouldLockOut = true;
-            bool check_result = true;
-            lock (this._repo._members_syncroot[id])
+            var m = this._repo._members[id];
+            bool check_result = this.ComparePassword(password, m.PasswordHash);
+
+            if (check_result)
             {
-                var m = this._repo._members[id];
-                if (this.ComparePassword(password, m.PasswordHash) == false)
-                {
-                    m.FailedLoginAttemptsCount++;
-                    shouldLockOut = (m.FailedLoginAttemptsCount >= 3);
-                    check_result = false;
-                }
-                else
-                {
-                    check_result = true;
-                    shouldLockOut = false;
-                    m.FailedLoginAttemptsCount = 0;
-                }
+                m.FailedLoginAttemptsCount = 0;
+            }
+            else
+            {
+                m.FailedLoginAttemptsCount++;
+                if (m.FailedLoginAttemptsCount >= 3) this.Lock(id, "wrong password over 3 times.");
             }
 
-            if (shouldLockOut) this.Lock(id, "wrong password over 3 times.");
             return check_result;
         }
 

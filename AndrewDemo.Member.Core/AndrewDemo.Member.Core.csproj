@@ -6,10 +6,16 @@
 
   <ItemGroup>
     <PackageReference Include="jose-jwt" Version="3.2.0" />
+    <!--<PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />-->
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AndrewDemo.Member.Contracts\AndrewDemo.Member.Contracts.csproj" />
   </ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 
 </Project>

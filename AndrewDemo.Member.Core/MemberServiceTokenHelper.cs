@@ -1,35 +1,21 @@
-﻿using System;
+﻿using AndrewDemo.Member.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 
 namespace AndrewDemo.Member.Core
 {
-    public class MemberServiceToken
-    {
-        public bool IsInitialized { get; internal set; }
 
-        // JWT claim: iss, issuer
-        // type, USER | STAFF
-        public string IdentityType { get; internal set; }
-
-        // JWT claim: sub, subject
-        // who, iosapp | androidapp | webui | {staff}@chicken-house.net
-        public string IdentityName { get; internal set; }
-
-        // JWT claim: jti, JWT ID
-        public string ID { get; internal set; }
-
-        // JWT claim: iat, issue at
-        public DateTime CreateTime { get; internal set; }
-
-        // JWT claim: exp, expiration
-        public DateTime ExpireTime { get; internal set; }
-
-
-
-
-
+    public static class MemberServiceTokenHelper {
+        internal class jwt_spec
+        {
+            public string iss { get; set; }
+            public string sub { get; set; }
+            public string jti { get; set; }
+            public double iat { get; set; }
+            public double exp { get; set; }
+        }
 
         public static MemberServiceToken BuildToken(string tokenText, bool check_expiration = true)
         {
@@ -57,16 +43,10 @@ namespace AndrewDemo.Member.Core
         }
 
 
-        private static readonly byte[] _jwt_key = new byte[] { 0x06, 0x07, 0x04, 0x01 };   // 6741, base64: BgcEAQ==
+        private static readonly byte[] _jwt_key = 
+            new byte[] { 0x06, 0x07, 0x04, 0x01 };   // 6741, base64: BgcEAQ==
+            // Encoding.UTF8.GetBytes("安德魯的部落格");
 
-        //public static (string type, string name) RestoreToken(string token)
-        //{
-        //    string payload = Jose.JWT.Decode(token, _jwt_key, Jose.JwsAlgorithm.HS512);
-
-        //    var t = JsonSerializer.Deserialize<x>(payload);
-
-        //    return (t.iss, t.sub);
-        //}
 
         public static string CreateToken(string identityType, string identityName)
         {
@@ -97,12 +77,5 @@ namespace AndrewDemo.Member.Core
 
     }
 
-    internal class jwt_spec
-    {
-        public string iss { get; set; }
-        public string sub { get; set; }
-        public string jti { get; set; }
-        public double iat { get; set; }
-        public double exp { get; set; }
-    }
+
 }
