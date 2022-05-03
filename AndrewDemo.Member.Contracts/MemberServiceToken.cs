@@ -27,6 +27,9 @@ namespace AndrewDemo.Member.Contracts
 
         // JWT claim: exp, expiration
         public DateTime ExpireTime { get; internal set; }
+
+        // JWT claim: scope, api scopes, space seperate string
+        public string[] Scopes { get; internal set; }
     }
 
 }

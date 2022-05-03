@@ -15,6 +15,7 @@ namespace AndrewDemo.Member.Core
             public string jti { get; set; }
             public double iat { get; set; }
             public double exp { get; set; }
+            public string scope { get; set; }
         }
 
         public static MemberServiceToken BuildToken(string tokenText, bool check_expiration = true)
@@ -38,6 +39,7 @@ namespace AndrewDemo.Member.Core
             token.IdentityName = _x.sub;
             token.CreateTime = ConvertUnixTimeStamp(_x.iat);
             token.ExpireTime = ConvertUnixTimeStamp(_x.exp);
+            token.Scopes = (_x.scope == null || _x.scope.Length == 0)?(null):(_x.scope.Split(' '));
 
             return token;
         }
@@ -48,7 +50,7 @@ namespace AndrewDemo.Member.Core
             // Encoding.UTF8.GetBytes("安德魯的部落格");
 
 
-        public static string CreateToken(string identityType, string identityName)
+        public static string CreateToken(string identityType, string identityName, string[] scopes = null)
         {
             string payload = JsonSerializer.Serialize<jwt_spec>(new jwt_spec()
             {
@@ -56,7 +58,8 @@ namespace AndrewDemo.Member.Core
                 sub = identityName,
                 jti = Guid.NewGuid().ToString("N").ToUpper(),
                 iat = ConvertUnixTimeStamp(DateTime.UtcNow),
-                exp = ConvertUnixTimeStamp(DateTime.UtcNow.AddYears(3))
+                exp = ConvertUnixTimeStamp(DateTime.UtcNow.AddYears(3)),
+                scope = (scopes == null || scopes.Length == 0) ? (null) : (string.Join(' ', scopes))
             });
 
             return Jose.JWT.Encode(

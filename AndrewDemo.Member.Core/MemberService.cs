@@ -46,7 +46,7 @@ namespace AndrewDemo.Member.Core
 
         private bool SafeChangeState(int id, string actionName, Func<MemberModel, bool> func)
         {
-            if (this._repo._members.ContainsKey(id) == false) return false;
+            if (this._repo._members.ContainsKey(id) == false) throw new MemberServiceException($"MS: id({id}) not exist."); //return false;
 
             MemberState initState;
             MemberState finalState;
@@ -64,13 +64,15 @@ namespace AndrewDemo.Member.Core
                 if (func(model) == false)
                 {
                     Console.WriteLine($"* SafeChangeState Fail: func() return false. model was not updated.");
-                    return false;
+                    //return false;
+                    throw new MemberServiceException($"* SafeChangeState Fail: func() return false. model was not updated.");
                 }
 
                 if (model.State != check.finalState)
                 {
                     Console.WriteLine($"* SafeChangeState Fail: state change was not match FSM. model was not updated.");
-                    return false; //throw new InvalidOperationException("state change was not allowed by FSM.");
+                    //return false; //throw new InvalidOperationException("state change was not allowed by FSM.");
+                    throw new MemberServiceException($"* SafeChangeState Fail: state change was not match FSM. model was not updated.");
                 }
 
                 this._repo._members[id] = model.Clone();
@@ -179,7 +181,7 @@ namespace AndrewDemo.Member.Core
 
         public bool CheckPassword(int id, string password)
         {
-            if (FSMRuleCheck(id, "check-password") == false) return false;
+            if (FSMRuleCheck(id, "check-password", false) == false) return false;
 
             var m = this._repo._members[id];
             bool check_result = this.ComparePassword(password, m.PasswordHash);
@@ -272,6 +274,9 @@ namespace AndrewDemo.Member.Core
 
             lock (this._repo)
             {
+                var m = (from x in this._repo._members.Values where x.Name == name select x).FirstOrDefault();
+                if (m != null) throw new MemberServiceException($"Member (name: {name}) existed.");
+
                 this._repo._members.Add(member.Id, member);
                 this._repo._members_syncroot.Add(member.Id, syncroot);
             }
@@ -327,6 +332,7 @@ namespace AndrewDemo.Member.Core
         public MemberModel GetMemberByName(string name)
         {
             var m = (from x in this._repo._members.Values where x.Name == name select x).FirstOrDefault();
+            if (m == null) return null;
             return this.GetMember(m.Id);
         }
 
@@ -364,11 +370,15 @@ namespace AndrewDemo.Member.Core
         //    throw new InvalidOperationException($"Member not exist or its current STATE is not {state}.");
         //}
 
-        private bool FSMRuleCheck(int? id, string actionName)
+        internal bool FSMRuleCheck(int? id, string actionName, bool throw_exception = true)
         {
             if (id != null && this._repo._members.ContainsKey(id.Value) == false)
             {
                 Console.WriteLine($"* FSM: Member(id: {id}) not exist.");
+                if (throw_exception)
+                {
+                    throw new MemberServiceException($"* FSM: Member(id: {id}) not exist.");
+                }
                 return false;
             }
 
@@ -380,6 +390,10 @@ namespace AndrewDemo.Member.Core
                     this._token.IdentityType).result == false)
                 {
                     Console.WriteLine($"* FSM: FSM rule check fail.");
+                    if (throw_exception)
+                    {
+                        throw new MemberServiceException($"* FSM: FSM rule check fail.");
+                    }
                     return false;
                 }
             }
@@ -388,6 +402,10 @@ namespace AndrewDemo.Member.Core
                 if (this._fsm.CanExecute(actionName, this._token.IdentityType) == false)
                 {
                     Console.WriteLine($"* FSM: FSM rule check fail.");
+                    if (throw_exception)
+                    {
+                        throw new MemberServiceException($"* FSM: FSM rule check fail.");
+                    }
                     return false;
                 }
             }
@@ -412,6 +430,13 @@ namespace AndrewDemo.Member.Core
             }
 
             return true;
+        }
+    }
+
+    public class MemberServiceException : Exception
+    {
+        public MemberServiceException(string message) : base(message)
+        {
         }
     }
 }

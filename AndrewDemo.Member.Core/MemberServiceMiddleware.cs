@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
 using AndrewDemo.Member.Contracts;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AndrewDemo.Member.Core
 {
@@ -18,19 +19,20 @@ namespace AndrewDemo.Member.Core
             _next = next;
         }
 
-        public async Task Invoke(HttpContext context, MemberServiceToken token, MemberStateMachine fsm)
+        // if return false, bypass next middleware chain.
+        private bool PreProcessMemberService(HttpContext context, MemberServiceToken token, MemberStateMachine fsm, MemberService service)
         {
-            if (context.Request.Headers.TryGetValue("authorization", out var values) == false) goto next;
-            if (string.IsNullOrEmpty(values.FirstOrDefault())) goto next;
-            if (values.FirstOrDefault().StartsWith(_bearerText, StringComparison.OrdinalIgnoreCase) == false) goto next;
+            if (context.Request.Headers.TryGetValue("authorization", out var values) == false) return true;
+            if (string.IsNullOrEmpty(values.FirstOrDefault())) return true;
+            if (values.FirstOrDefault().StartsWith(_bearerText, StringComparison.OrdinalIgnoreCase) == false) return true;
 
             var tokenText = values.FirstOrDefault().Substring(_bearerText.Length);
             MemberServiceTokenHelper.BuildToken(token, tokenText);
 
             // Members only
-            if (context.Request.RouteValues["controller"] as string != "Members") goto next;
+            if (context.Request.RouteValues["controller"] as string != "Members") return true;
 
-            int id = 0;
+            int? id = null;
             if (context.Request.RouteValues.ContainsKey("id"))
             {
                 id = int.Parse(context.Request.RouteValues["id"] as string);
@@ -48,17 +50,24 @@ namespace AndrewDemo.Member.Core
                 actionName = action.ActionName;
             }
 
-            if (id == 0)
+            service.FSMRuleCheck(id, actionName);
+            return true;
+        }
+
+        public async Task Invoke(HttpContext context, MemberServiceToken token, MemberStateMachine fsm, MemberService service)
+        {
+            try
             {
-                if (fsm.CanExecute(actionName, token.IdentityType) == false)
+                if (this.PreProcessMemberService(context, token, fsm, service))
                 {
-                    context.Response.StatusCode = 500;
-                    return;
+                    await _next(context);
                 }
             }
-
-        next:
-            await _next(context);
+            catch (MemberServiceException e)
+            {
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("MemberStateMachineException: " + e.Message);
+            }
         }
     }
 

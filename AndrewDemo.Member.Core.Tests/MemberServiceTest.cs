@@ -66,6 +66,10 @@ namespace AndrewDemo.Member.Core.Tests
 
             // 尚未通過驗證，無法登入
             Assert.IsFalse(service_for_web.CheckPassword(id, "1234"));
+            //Assert.ThrowsException<MemberStateMachineException>(() =>
+            //{
+            //    service_for_web.CheckPassword(id, "1234");
+            //});
 
             // 通過驗證，重新登入
             Assert.IsTrue(service_for_web.Activate(id, number));

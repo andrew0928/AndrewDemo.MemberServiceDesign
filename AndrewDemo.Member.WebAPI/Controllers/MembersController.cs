@@ -28,43 +28,35 @@ namespace WebAPI.Controllers
         [HttpPost]
         [Route("register")]
         [MemberServiceAction(ActionName = "register")]
-        public MemberModel Register(string name, string password, string email)
+        public IActionResult Register([FromForm]string name, [FromForm] string password, [FromForm] string email)
         {
-            return this._service.Register(name, password, email);
+            return this.Ok(this._service.Register(name, password, email));
         }
 
 
         [HttpPost]
         [Route("{id:int:min(1)}/activate")]
         [MemberServiceAction(ActionName = "activate")]
-        public string Activate(int id, string number)
+        public IActionResult Activate(int id, [FromForm]string number)
         {
-            if (this._service.Activate(id, number))
-            {
-                return "OK";
-            }
-
-            return "FAIL";
+            this._service.Activate(id, number);
+            return this.Ok();
         }
 
         [HttpPost]
         [Route("{id:int:min(1)}/lock")]
         [MemberServiceAction(ActionName = "lock")]
-        public string Lock(int id, string reason)
+        public IActionResult Lock(int id, [FromForm] string reason)
         {
-            if (this._service.Lock(id, reason))
-            {
-                return "OK";
-            }
-
-            return "FAIL";
+            this._service.Lock(id, reason);
+            return this.Ok();
         }
 
 
         [HttpPost]
         [Route("{id:int:min(1)}/unlock")]
         [MemberServiceAction(ActionName = "unlock")]
-        public string UnLock(int id, string reason)
+        public IActionResult UnLock(int id, [FromForm] string reason)
         {
             throw new NotImplementedException();
         }
@@ -72,27 +64,19 @@ namespace WebAPI.Controllers
         [HttpPost]
         [Route("{id:int:min(1)}/soft-delete")]
         [MemberServiceAction(ActionName = "soft-delete")]
-        public string SoftDelete(int id, string reason)
+        public IActionResult SoftDelete(int id, [FromForm] string reason)
         {
-            if (this._service.Delete(id, reason))
-            {
-                return "OK";
-            }
-
-            return "FAIL";
+            this._service.Delete(id, reason);
+            return this.Ok();
         }
 
         [HttpPost]
         [Route("{id:int:min(1)}/delete")]
         [MemberServiceAction(ActionName = "delete")]
-        public string Delete(int id, string reason)
+        public IActionResult Delete(int id, [FromForm] string reason)
         {
-            if (this._service.Delete(id, reason))
-            {
-                return "OK";
-            }
-
-            return "FAIL";
+            this._service.Delete(id, reason);
+            return this.Ok();
         }
         #endregion
 
@@ -101,38 +85,41 @@ namespace WebAPI.Controllers
         [HttpGet]
         [Route("{id:int:min(1)}/generate-validate-number")]
         [MemberServiceAction(ActionName = "generate-validate-number")]
-        public string GenerateValidateNumber(int id)
+        public IActionResult GenerateValidateNumber(int id)
         {
-            return this._service.GenerateValidateNumber(id);
+            return this.Ok(this._service.GenerateValidateNumber(id));
         }
 
 
         [HttpPost]
         [Route("check-password")]
         [MemberServiceAction(ActionName = "check-password")]
-        public string CheckPassword(string name, string password)
+        public IActionResult CheckPassword([FromForm] string name, [FromForm] string password)
         {
             var m = this._service.GetMemberByName(name);
+            if (m == null) return this.StatusCode(403);
+
             if (this._service.CheckPassword(m.Id, password))
             {
-                return "OK";
+                return Ok();
             }
-            return "FAIL";
+            return this.StatusCode(403); ;
         }
 
         [HttpGet]
         [Route("{id:int:min(1)}")]
         [MemberServiceAction(ActionName = "get-member")]
-        public MemberModel GetMember(int id)
+        public IActionResult GetMember(int id)
         {
-            return this._service.GetMember(id);
+            return this.Ok(this._service.GetMember(id));
         }
 
         [HttpGet]
         [MemberServiceAction(ActionName = "get-members")]
-        public IEnumerable<MemberModel> GetMembers()
+        //public IEnumerable<MemberModel> GetMembers()
+        public IActionResult GetMembers()
         {
-            return this._service.GetMembers();
+            return this.Ok(this._service.GetMembers());
         }
         #endregion
 
